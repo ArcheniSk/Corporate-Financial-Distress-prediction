@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this research software, please cite the associated paper when available."
+title: "FME Project: Time-Aware Graph Learning for Corporate Distress"
+authors:
+  - family-names: Shanker
+    given-names: Atharv
+  - family-names: Pandey
+    given-names: Vedang
+  - family-names: Mitra
+    given-names: Shoumik
+version: 0.1.0
+date-released: 2026-10-22
+license: MIT
+repository-code: https://github.com/Vedang-P/FME-Project

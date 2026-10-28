@@ -1,0 +1,16 @@
+{
+  "dataset_file": "data/raw/american_bankruptcy_dataset.csv",
+  "history_length": 5,
+  "train_end_year": 2011,
+  "validation_end_year": 2014,
+  "test_start_year": 2015,
+  "neighbors": 10,
+  "hidden_dim": 64,
+  "dropout": 0.2,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "epochs": 30,
+  "patience": 6,
+  "seed": 42,
+  "recall_target": 0.8
+}

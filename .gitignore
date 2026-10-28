@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+data/raw/
+data/processed/
+docs/synopsis.pdf
+results/**
+!results/.gitkeep
+.DS_Store
+.rstack/

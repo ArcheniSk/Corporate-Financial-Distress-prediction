@@ -1,0 +1,87 @@
+{
+  "source": "/kaggle/input/datasets/atharvshanker/polish-companies-bankruptcy-fme/5year.arff",
+  "seed": 904,
+  "device": "cuda",
+  "selection_metric": "mean 3-fold inner grouped cross-validation average precision",
+  "test_accessed": false,
+  "inner_cv": "3-fold stratified grouped cross-validation within the outer development partition (training plus validation); exact duplicate feature rows remain in one fold.",
+  "configs_per_family": 12,
+  "families": {
+    "xgboost": {
+      "inner_cv_mean_pr_auc": 0.7531498408814857,
+      "parameters": {
+        "n_estimators": 800,
+        "max_depth": 5,
+        "learning_rate": 0.07,
+        "min_child_weight": 10,
+        "subsample": 0.95,
+        "colsample_bytree": 0.75,
+        "reg_lambda": 1.0,
+        "reg_alpha": 0.0,
+        "scale_pos_weight_multiplier": 0.5
+      },
+      "configs_evaluated": 12,
+      "inner_folds": 3
+    },
+    "lightgbm": {
+      "inner_cv_mean_pr_auc": 0.7509801363665236,
+      "parameters": {
+        "n_estimators": 400,
+        "num_leaves": 15,
+        "max_depth": 9,
+        "learning_rate": 0.1,
+        "min_child_samples": 20,
+        "subsample": 0.8,
+        "colsample_bytree": 0.6,
+        "reg_lambda": 2.0,
+        "scale_pos_weight_multiplier": 0.5
+      },
+      "configs_evaluated": 12,
+      "inner_folds": 3
+    },
+    "catboost": {
+      "inner_cv_mean_pr_auc": 0.7390300923915257,
+      "parameters": {
+        "iterations": 800,
+        "depth": 6,
+        "learning_rate": 0.1,
+        "l2_leaf_reg": 3.0,
+        "random_strength": 1.0,
+        "scale_pos_weight_multiplier": 0.5
+      },
+      "configs_evaluated": 12,
+      "inner_folds": 3
+    },
+    "lightgbm_missingness_prior": {
+      "inner_cv_mean_pr_auc": 0.7880506662405753,
+      "parameters": {
+        "n_estimators": 800,
+        "num_leaves": 7,
+        "max_depth": 5,
+        "learning_rate": 0.1,
+        "min_child_samples": 30,
+        "subsample": 1.0,
+        "colsample_bytree": 1.0,
+        "reg_lambda": 0.5,
+        "scale_pos_weight_multiplier": 0.5
+      },
+      "configs_evaluated": 12,
+      "inner_folds": 3
+    },
+    "lstm_gnn": {
+      "inner_cv_mean_pr_auc": 0.3836277283561757,
+      "parameters": {
+        "hidden_dim": 128,
+        "dropout": 0.0,
+        "learning_rate": 0.001,
+        "weight_decay": 0.0001,
+        "neighbors": 30,
+        "positive_weight_multiplier": 0.75
+      },
+      "configs_evaluated": 12,
+      "inner_folds": 3
+    }
+  },
+  "search_seconds": 381.22,
+  "warning": "Configurations use inner grouped cross-validation and do not inspect outer test labels; earlier exploratory test results informed architecture development, so the full research iteration remains exploratory."
+}
