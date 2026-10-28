@@ -37,6 +37,20 @@ python scripts/prepare_kaggle_kernel.py `
 kaggle kernels push -p kaggle/polish-kernel --accelerator NvidiaTeslaT4
 ```
 
+For a protocol-matched five-fold outer evaluation, prepare a separate kernel with `--outer-cv` and a distinct kernel slug. The same shuffled `StratifiedGroupKFold` partition is used for all five folds, so each row is scored once in an untouched outer fold. Each fold tunes only inside its outer development data and reports a fold-specific result:
+
+```powershell
+python scripts/prepare_kaggle_kernel.py `
+  --kernel-id atharvshanker/fme-polish-bankruptcy-t4-outer-cv `
+  --title "FME Polish Bankruptcy T4 Outer CV" `
+  --data-source atharvshanker/polish-companies-bankruptcy-fme `
+  --polish-benchmark `
+  --outer-cv `
+  --enable-internet `
+  --output-dir kaggle/polish-kernel-outer-cv
+kaggle kernels push -p kaggle/polish-kernel-outer-cv --accelerator NvidiaTeslaT4
+```
+
 The current kernel is [FME Polish Bankruptcy T4 Nested Benchmark](https://www.kaggle.com/code/atharvshanker/fme-polish-bankruptcy-t4-nested-benchmark). Version 11 completed on Kaggle T4; aggregate metrics, predictions, per-seed results, and tuned configurations are in `results/kaggle-polish-version11/fme-results/`. The run includes CatBoost alongside XGBoost, LightGBM, classical tabular models, graph baselines, and architecture ablations. See [`../docs/polish-benchmark.md`](../docs/polish-benchmark.md) for the protocol and results.
 
 ## CLI limitations

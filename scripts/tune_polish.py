@@ -41,6 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output_file", required=True)
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--outer-fold-index", type=int, default=None, help="Tune within one fold's outer development partition from a shared 5-fold split.")
     parser.add_argument("--configs-per-family", type=int, default=50)
     parser.add_argument("--epochs", type=int, default=40)
     parser.add_argument("--patience", type=int, default=5)
@@ -206,7 +207,7 @@ def main() -> int:
     frame, y, feature_columns = read_arff(source)
     raw = frame.to_numpy(dtype=np.float64, copy=True)
     raw[~np.isfinite(raw)] = np.nan
-    train_ids, val_ids, _test_ids, _ = grouped_splits(raw, y, args.seed)
+    train_ids, val_ids, _test_ids, _ = grouped_splits(raw, y, args.seed, args.outer_fold_index)
     development_ids = np.concatenate([train_ids, val_ids])
     folds = grouped_cv_folds(raw, y, development_ids, args.seed + 1001, folds=3)
     y_development = y[development_ids]
@@ -236,6 +237,7 @@ def main() -> int:
     report = {
         "source": str(source),
         "seed": args.seed,
+        "outer_fold_index": args.outer_fold_index,
         "device": str(device),
         "selection_metric": "mean 3-fold inner grouped cross-validation average precision",
         "test_accessed": False,

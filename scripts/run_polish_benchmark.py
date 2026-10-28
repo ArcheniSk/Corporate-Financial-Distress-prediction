@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run an exploratory tabular benchmark on UCI's Polish 5year ARFF subset.
+"""Run an exploratory benchmark on UCI's Polish 5year ARFF subset.
 
 This dataset has no company identifiers or fiscal-year keys, so this script uses
 a stratified random holdout and does not train temporal or graph models.
@@ -68,6 +68,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data_file", required=True, help="Path to 5year.arff from the UCI Polish dataset.")
     parser.add_argument("--output_dir", default="/kaggle/working/fme-results")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--outer-fold-index", type=int, default=None, help="Use one fold from a shared 5-fold StratifiedGroupKFold partition (0-4) for protocol-matched outer CV.")
     parser.add_argument("--recall_target", type=float, default=0.8)
     parser.add_argument("--device", choices=("auto", "cpu", "cuda"), default="auto")
     parser.add_argument("--epochs", type=int, default=50)
@@ -100,12 +101,18 @@ def read_arff(path: Path) -> tuple[pd.DataFrame, np.ndarray, list[str]]:
     return frame, y, feature_columns
 
 
-def grouped_splits(values: np.ndarray, y: np.ndarray, seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
-    """Create approximately 60/20/20 stratified splits, grouping identical inputs."""
+def grouped_splits(values: np.ndarray, y: np.ndarray, seed: int, outer_fold_index: int | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
+    """Create grouped splits, with an optional fold from one shared outer 5-fold partition."""
     signature = pd.util.hash_pandas_object(pd.DataFrame(values), index=False).to_numpy()
     groups = pd.factorize(signature, sort=True)[0]
     outer = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=seed)
-    train_val, test = next(outer.split(values, y, groups))
+    outer_splits = outer.split(values, y, groups)
+    if outer_fold_index is None:
+        train_val, test = next(outer_splits)
+    else:
+        if not 0 <= outer_fold_index < 5:
+            raise ValueError("--outer-fold-index must be between 0 and 4.")
+        train_val, test = list(outer_splits)[outer_fold_index]
     inner = StratifiedGroupKFold(n_splits=4, shuffle=True, random_state=seed + 1)
     train_rel, val_rel = next(inner.split(values[train_val], y[train_val], groups[train_val]))
     train = train_val[train_rel]
@@ -328,7 +335,7 @@ def main() -> int:
     frame, y, feature_columns = read_arff(data_path)
     raw_values = frame.to_numpy(dtype=np.float64, copy=True)
     raw_values[~np.isfinite(raw_values)] = np.nan
-    train_ids, val_ids, test_ids, unique_feature_groups = grouped_splits(raw_values, y, args.seed)
+    train_ids, val_ids, test_ids, unique_feature_groups = grouped_splits(raw_values, y, args.seed, args.outer_fold_index)
     refit_ids = np.concatenate([train_ids, val_ids])
     feature_groups = financial_relation_groups(feature_columns)
 
@@ -815,12 +822,18 @@ def main() -> int:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     pd.concat(predictions, ignore_index=True).to_csv(output_dir / "predictions.csv", index=False)
+    evaluation = (
+        f"Fold {args.outer_fold_index + 1} of a shared 5-fold stratified grouped outer partition; identical feature rows remain in one fold. Model selection and early stopping use only the outer development partition; final models refit on train plus validation before scoring the held-out outer fold."
+        if args.outer_fold_index is not None else
+        "Stratified grouped 60/20/20 holdout; identical feature rows are kept within one split. Model selection and early stopping use validation average precision; final models refit on train plus validation rows before test scoring."
+    )
     report = {
         "source": "UCI Polish Companies Bankruptcy, 5year.arff",
         "citation": "Tomczak, S. (2016). Polish Companies Bankruptcy. UCI Machine Learning Repository. https://doi.org/10.24432/C5F600",
         "license": "CC BY 4.0",
         "forecast_horizon": "One-year-ahead subset (5year.arff)",
-        "evaluation": "Stratified grouped 60/20/20 holdout; identical feature rows are kept within one split. Model selection and early stopping use validation average precision; final models refit on train plus validation rows before test scoring.",
+        "evaluation": evaluation,
+        "outer_fold_index": args.outer_fold_index,
         "temporal_graph_evaluation": False,
         "evaluation_scope": "The LSTM-GNN is evaluated as a one-snapshot inductive peer graph model. Its LSTM receives one observed vector, so this experiment does not test temporal modeling.",
         "limitations": ["The supplied files contain no company identifiers or fiscal-year keys, so they cannot support longitudinal sequences, chronological splits, or company-clustered intervals.", "Graph ablations test edge attention, unweighted edges, neighbor count, and relation channels; temporal persistence is not identifiable from this single-snapshot dataset.", "When per-seed tuning is enabled, candidate selection uses only that split's validation partition; otherwise the supplied tuned config is reused. The selected models refit on train plus validation rows after selection. Earlier exploratory benchmark test records informed architecture development, so these results are not a confirmatory blinded evaluation. Seed variability is not a confidence interval and does not establish state-of-the-art performance."],

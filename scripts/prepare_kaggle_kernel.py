@@ -29,6 +29,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tuning-epochs", type=int, default=40, help="Maximum epochs per LSTM-GNN tuning candidate.")
     parser.add_argument("--tuning-patience", type=int, default=5, help="Early-stopping patience for LSTM-GNN tuning.")
     parser.add_argument("--benchmark-seeds", nargs="+", type=int, default=[101, 102, 103, 104, 105], help="Fresh holdout seeds for the Polish benchmark run.")
+    parser.add_argument("--outer-cv", action="store_true", help="Run every fold of one stratified grouped 5-fold outer evaluation.")
+    parser.add_argument("--outer-cv-seed", type=int, default=42, help="Seed for the shared 5-fold outer partition.")
     parser.add_argument("--train-arg", action="append", default=[], help="Extra train.py argument; repeat for each argument.")
     return parser.parse_args()
 
@@ -89,7 +91,10 @@ elif {args.polish_benchmark!r}:
         raise SystemExit("No 5year.arff found under /kaggle/input. Attach the private Polish bankruptcy dataset.")
     run_args = ["--data_file", str(candidates[0]), "--device", "cuda", "--output_dir", "/kaggle/working/fme-results", *{extra_args!r}]
     run_args += ["--tune-configs-per-family", str({args.tuning_configs}), "--tuning-epochs", str({args.tuning_epochs}), "--tuning-patience", str({args.tuning_patience})]
-    run_args += ["--seeds", *[str(seed) for seed in {args.benchmark_seeds!r}]]
+    if {args.outer_cv!r}:
+        run_args += ["--outer-cv", "--outer-cv-seed", str({args.outer_cv_seed})]
+    else:
+        run_args += ["--seeds", *[str(seed) for seed in {args.benchmark_seeds!r}]]
     subprocess.run([sys.executable, "scripts/run_polish_repeated.py", *run_args], check=True)
     raise SystemExit(0)
 else:
